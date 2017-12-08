@@ -2,12 +2,13 @@ FROM golang:1.8
 
 RUN apt-get update && \
 apt-get install -y unzip && \
-apt-get install -y wget
+apt-get install -y wget && \
+apt-get install -y libx11-6
 
 WORKDIR /lotherry
 
-RUN wget https://chromedriver.storage.googleapis.com/2.33/chromedriver_mac64.zip
-RUN unzip chromedriver_mac64.zip
+RUN wget https://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip
+RUN unzip chromedriver_linux64.zip
 
 WORKDIR /go/src/app
 
@@ -18,5 +19,9 @@ COPY go/src/app/lotherry.go .
 
 RUN go-wrapper download
 RUN go-wrapper install
+
+RUN apt-get install -y libnss3-dev
+RUN apt-get install -y libgconf-2-4
+RUN apt-get install -y libfontconfig-1
 
 CMD ["go-wrapper", "run", "app"]
