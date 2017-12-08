@@ -10,9 +10,14 @@ import (
 	"strconv"
 )
 
+
+//CHROME_DRIVER_LOCATION
 const DefaultDriverLocation = "chromedriver"
+//SCRAPPING_URL
 const DefaultScrappingUrl = ""
+//OUTPUT_FILE
 const DefaultOutputFile = "winning_numbers"
+//MAX_RETRIES
 const DefaultRetryAttempts = "20"
 
 func main() {
