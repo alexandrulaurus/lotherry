@@ -19,7 +19,7 @@ CHROME_DRIVER_LOCATION=/where/you/downloaded/chrome/driver/file go run lotherry.
 tail -f $(ls | grep winning | tail -n 1)
 ```
 
-Note: For other config params set [these environment variables](https://github.com/alexandrulaurus/lotherry/blob/master/go/src/app/lotherry.go#L13-L16)
+Note: For other config params set [these environment variables](https://github.com/alexandrulaurus/lotherry/blob/master/go/src/app/lotherry.go#L14-L21)
 
 ## Docker
 
