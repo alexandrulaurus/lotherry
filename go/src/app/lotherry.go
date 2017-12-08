@@ -22,10 +22,14 @@ func main() {
 	err := chromeDriver.Start()
 	checkError("Cannot start driver", err)
 
-	desired := webdriver.Capabilities{"Platform": "Linux"}
+	chromeOptions := make(map[string][]string)
+	chromeOptions["args"] = []string{"--headless", "--disable-gpu", "--window-size=1280,800"}
+	desired := webdriver.Capabilities{"Platform": "Linux", "chromeOptions" : chromeOptions}
+
 	required := webdriver.Capabilities{}
 	session, err := chromeDriver.NewSession(desired, required)
 	checkError("Cannot create session", err)
+	time.Sleep(10 * time.Second)
 	url := getEnvironmentVariable("SCRAPPING_URL", DefaultScrappingUrl)
 	err = session.Url(url)
 	checkError("Cannot fetch url", err)
@@ -48,7 +52,8 @@ func main() {
 
 	for 1 == 1 {
 		err = session.Url(url)
-		checkError("Cannot fetch url", err)
+		//checkError("Cannot fetch url", err)
+		session.AcceptAlert()
 
 		rows, err := session.FindElements(webdriver.FindElementStrategy("tag name"), "tr")
 		checkError("Cannot fetch records", err)
