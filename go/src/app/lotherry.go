@@ -60,14 +60,14 @@ func main() {
 			rowInfo := fetchBalance(0, maxRetries, rowData)
 			log.Println(rowInfo["privateKey"] + " " + rowInfo["address"] + " " + rowInfo["balance"])
 
-			if rowInfo["balance"] != "0" {
+			if rowInfo["balance"] != "0" && len(rowInfo["balance"]) != 0 {
 				csvRow := []string{rowInfo["privateKey"], rowInfo["address"], rowInfo["balance"]}
 				err = writer.Write(csvRow)
 				checkError("Cannot write to file", err)
 				writer.Flush()
 			}
 		}
-		var seconds= int(rand.Intn(30))
+		var seconds = random(50, 200)
 		log.Printf("Sleeping for %d", seconds)
 		time.Sleep(time.Duration(seconds) * time.Second)
 	}
@@ -125,3 +125,9 @@ func checkError(message string, err error) {
 		log.Fatal(message, err)
 	}
 }
+
+func random(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max - min) + min
+}
+
