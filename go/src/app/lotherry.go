@@ -7,27 +7,32 @@ import (
 	"math/rand"
 	"os"
 	"encoding/csv"
+	"strconv"
 )
+
+const DefaultDriverLocation = "chromedriver"
+const DefaultScrappingUrl = ""
+const DefaultOutputFile = "winning_numbers"
+const DefaultRetryAttempts = "20"
 
 func main() {
 
-	chromeDriver := webdriver.NewChromeDriver("/Users/alexandru/Documents/chromedriver")
+	chromeDriverLocation := getEnvironmentVariable("CHROME_DRIVER_LOCATION", DefaultDriverLocation)
+	chromeDriver := webdriver.NewChromeDriver(chromeDriverLocation)
 	err := chromeDriver.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError("Cannot start driver", err)
+
 	desired := webdriver.Capabilities{"Platform": "Linux"}
 	required := webdriver.Capabilities{}
 	session, err := chromeDriver.NewSession(desired, required)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = session.Url("http://www.ethersecret.com/random")
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError("Cannot create session", err)
+	url := getEnvironmentVariable("SCRAPPING_URL", DefaultScrappingUrl)
+	err = session.Url(url)
+	checkError("Cannot fetch url", err)
 
-	file, err := os.Create("/Users/alexandru/Documents/lotherry/winning_numbers")
+	timestamp := time.Now().Format("2006-01-02T15:04:05")
+	outputFile := getEnvironmentVariable("OUTPUT_FILE", DefaultOutputFile) + "_" + timestamp
+	file, err := os.Create(outputFile)
 	checkError("Cannot create file", err)
 	defer file.Close()
 
@@ -38,47 +43,59 @@ func main() {
 	err = writer.Write(csvRow)
 	checkError("Cannot write to file", err)
 
-	count := 0
-	for count < 10 {
+	maxRetries, err := strconv.Atoi(getEnvironmentVariable("MAX_RETRIES", DefaultRetryAttempts))
+	checkError("Cannot parse max retries", err)
+
+	for 1 == 1 {
+		err = session.Url(url)
+		checkError("Cannot fetch url", err)
+
 		rows, err := session.FindElements(webdriver.FindElementStrategy("tag name"), "tr")
-		if err != nil {
-			log.Fatal(err)
-		}
+		checkError("Cannot fetch records", err)
 
 		for rowIndex := range rows {
-			rowData, rowErr := rows[rowIndex].FindElements(webdriver.FindElementStrategy("tag name"), "td")
-			if rowErr != nil {
-				log.Fatal(rowErr)
-			}
+			rowData, err := rows[rowIndex].FindElements(webdriver.FindElementStrategy("tag name"), "td")
+			checkError("Cannot fetch row data", err)
 
-			rowInfo := fetchBalance(0, rowData)
+			rowInfo := fetchBalance(0, maxRetries, rowData)
 			log.Println(rowInfo["privateKey"] + " " + rowInfo["address"] + " " + rowInfo["balance"])
 
 			if rowInfo["balance"] != "0" {
 				csvRow := []string{rowInfo["privateKey"], rowInfo["address"], rowInfo["balance"]}
-				err := writer.Write(csvRow)
+				err = writer.Write(csvRow)
 				checkError("Cannot write to file", err)
+				writer.Flush()
 			}
 		}
 		var seconds= int(rand.Intn(30))
 		log.Printf("Sleeping for %d", seconds)
 		time.Sleep(time.Duration(seconds) * time.Second)
-		count++
 	}
 
 	session.Delete()
 	chromeDriver.Stop()
 }
 
-func fetchBalance(attempt int, rowData []webdriver.WebElement) (map[string]string) {
+func getEnvironmentVariable(key string, defaultValue string) (string) {
+	variableValue := os.Getenv(key)
+	if len(variableValue) == 0 {
+		log.Printf("No env variable specified for %s. Using default: %s", key, defaultValue)
+		return defaultValue
+	} else {
+		log.Printf("Using env variable %s=%s", key, variableValue)
+		return variableValue
+	}
+}
+
+func fetchBalance(attempt int, maxRetries int, rowData []webdriver.WebElement) (map[string]string) {
 	rowInfo := parseRow(rowData)
-	if attempt < 20 && len(rowInfo["balance"]) == 0 {
-		log.Println("Balance not ready. Sleeping...")
+	if attempt < maxRetries && len(rowInfo["balance"]) == 0 {
+		log.Printf("Attempt %d: Balance not ready. Sleeping...", attempt)
 		time.Sleep(1 * time.Second)
 		attempt++
-		return fetchBalance(attempt, rowData)
-	} else if attempt >= 10 && len(rowInfo["balance"]) == 0 {
-		log.Println("Exhausted all attempts. Returning")
+		return fetchBalance(attempt, maxRetries, rowData)
+	} else if attempt >= maxRetries && len(rowInfo["balance"]) == 0 {
+		log.Printf("Exhausted all %d attempts. Returning", maxRetries)
 		return rowInfo
 	} else {
 		return rowInfo
