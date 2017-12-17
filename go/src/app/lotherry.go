@@ -77,7 +77,7 @@ func main() {
 				writer.Flush()
 			}
 		}
-		var seconds = random(50, 200)
+		var seconds = random(5, 10)
 		log.Printf("Sleeping for %d", seconds)
 		time.Sleep(time.Duration(seconds) * time.Second)
 	}
