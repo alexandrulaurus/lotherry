@@ -56,6 +56,7 @@ func main() {
 	checkError("Cannot parse max retries", err)
 
 	for 1 == 1 {
+		log.Println("Fetching next page")
 		err = session.Url(url)
 		//checkError("Cannot fetch url", err)
 		session.AcceptAlert()
@@ -63,18 +64,32 @@ func main() {
 		rows, err := session.FindElements(webdriver.FindElementStrategy("tag name"), "tr")
 		checkError("Cannot fetch records", err)
 
-		for rowIndex := range rows {
+		for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
 			rowData, err := rows[rowIndex].FindElements(webdriver.FindElementStrategy("tag name"), "td")
 			checkError("Cannot fetch row data", err)
 
-			rowInfo := fetchBalance(0, maxRetries, rowData)
-			log.Println(rowInfo["privateKey"] + " " + rowInfo["address"] + " " + rowInfo["balance"])
+			for attempt := 1; attempt < maxRetries; attempt++ {
+				rowInfo := parseRow(rowData)
+				balance := rowInfo["balance"]
 
-			if rowInfo["balance"] != "0" && len(rowInfo["balance"]) != 0 {
-				csvRow := []string{rowInfo["privateKey"], rowInfo["address"], rowInfo["balance"]}
-				err = writer.Write(csvRow)
-				checkError("Cannot write to file", err)
-				writer.Flush()
+				if len(balance) == 0 {
+					log.Printf("Attempt %d of %d. Balance not ready. Retrying", attempt, maxRetries)
+					continue
+				}
+				if len(balance) != 0 {
+					log.Printf("%s %s %s", rowInfo["privateKey"], rowInfo["address"], balance)
+					if balance != "0" {
+						log.Printf("Bingo: %s %s %s %s", rowInfo["privateKey"], rowInfo["address"], rowInfo["balance"], balance)
+						csvRow := []string{rowInfo["privateKey"], rowInfo["address"], balance}
+						err = writer.Write(csvRow)
+						checkError("Cannot write to file", err)
+						writer.Flush()
+					}
+					break
+				}
+				if attempt == maxRetries - 1 {
+					log.Printf("Exhausted all attempts for row %d", rowIndex)
+				}
 			}
 		}
 		var seconds = random(5, 10)
@@ -94,21 +109,6 @@ func getEnvironmentVariable(key string, defaultValue string) (string) {
 	} else {
 		log.Printf("Using env variable %s=%s", key, variableValue)
 		return variableValue
-	}
-}
-
-func fetchBalance(attempt int, maxRetries int, rowData []webdriver.WebElement) (map[string]string) {
-	rowInfo := parseRow(rowData)
-	if attempt < maxRetries && len(rowInfo["balance"]) == 0 {
-		log.Printf("Attempt %d: Balance not ready. Sleeping...", attempt)
-		time.Sleep(1 * time.Second)
-		attempt++
-		return fetchBalance(attempt, maxRetries, rowData)
-	} else if attempt >= maxRetries && len(rowInfo["balance"]) == 0 {
-		log.Printf("Exhausted all %d attempts. Returning", maxRetries)
-		return rowInfo
-	} else {
-		return rowInfo
 	}
 }
 
