@@ -69,7 +69,7 @@ func main() {
 			checkError("Cannot fetch row data", err)
 
 			for attempt := 1; attempt < maxRetries; attempt++ {
-				time.Sleep(1 * time.Second)
+				time.Sleep(50 * time.Millisecond)
 				rowInfo := parseRow(rowData)
 				balance := rowInfo["balance"]
 
