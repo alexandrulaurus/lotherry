@@ -133,7 +133,7 @@ func parseRow(rowData []webdriver.WebElement)(map[string]string){
 
 func checkError(message string, err error) {
 	if err != nil {
-		log.Fatal(message, err)
+		log.Println(err)
 	}
 }
 
