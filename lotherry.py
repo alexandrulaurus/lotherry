@@ -13,17 +13,17 @@ logging.basicConfig(level=logging.INFO,
         )
 
 
-MAX_ATTEMPTS = os.getenv('MAX_ATTEMPTS', 50)
+MAX_ATTEMPTS = int(os.getenv('MAX_ATTEMPTS', 50))
 OUTPUT_FILE = os.getenv('OUTPUT_FILE', 'winning_numbers')
 
 def acceptAlert(driver):
     try:
+        time.sleep(0.02)
         alert = driver.switch_to.alert
         alert.accept()
         logging.info("Alert accepted")
     except NoAlertPresentException:
-        logging.info("No alert. Parsing...")
-
+        a = 1
 
 def main():
     logging.info("Configuring options...")
@@ -54,14 +54,16 @@ def main():
                 for idx, val in enumerate(columns):
                     if (idx == 0):
                         rowInfo['key'] = val.text
+                        acceptAlert(driver)
                     if (idx == 1):
                         rowInfo['address'] = val.text
+                        acceptAlert(driver)
                     if (idx == 2):
                         rowInfo['balance'] = val.text
+                        acceptAlert(driver)
                 try:
                     balance = rowInfo['balance']
-                    if (balance == ""):
-                        time.sleep(0.2)
+                    if (balance == "" or balance == None):
                         continue
                     logging.info("%s | %s | %s", rowInfo['key'], rowInfo['address'], rowInfo['balance'])
                     if (balance != "0"):
@@ -74,7 +76,6 @@ def main():
                     time.sleep(1)
                     continue
                 logging.info("%s | %s | %s", rowInfo['key'], rowInfo['address'], rowInfo['balance'])
-        time.sleep(5)
 
 if __name__ == "__main__":
     main()
