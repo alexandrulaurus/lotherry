@@ -52,8 +52,7 @@ def main():
                 logging.info("Attempt %d of %d", attempt, MAX_ATTEMPTS)
                 rowInfo = {}
                 for idx, val in enumerate(columns):
-                    rowInfo['key'] = val.text
-                        acceptAlert(driver)
+                    acceptAlert(driver)
                     if (idx == 0):
                         rowInfo['key'] = val.text
                         acceptAlert(driver)
